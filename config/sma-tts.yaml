@@ -1,0 +1,87 @@
+Multi_spk_setting:
+    multi_speaker_training: False
+    spk_embedding_dim: 256
+
+Data_settings:
+    
+    min_level_db: -115 # minimum level of dbs when set lower bound in amp_to_db
+    ref_level_db: 20 # shift db before signal normalization
+    fmin: 0 # To test depending on dataset
+    fmax: 8000 # To test depending on dataset, this value is for 16khz wav
+    sample_rate: 16000  # Default sample rate is 16khz
+    auto_resample: False # Whether auto re-sample original wavs
+    rescale: False  # Whether to do waveform energy normalization
+    rescaling_max: 0.999  # Waveform energy normalization scale
+    preemphasis: 0.97
+    trim_silence: False # Whether to clip wav silence at beginning and end
+    num_silent_frames: 0  # Whether to pad 4 frames on both sides of waveforms
+    max_acoustic_length: 2000  # Ignore data whose number of frame is more than max_acoustic_length
+    signal_normalization: True  # Set as true for signal normalization
+    allow_clipping_in_normalization: True # Spectrograms normalization/scaling and clipping
+    symmetric_acoustic: True  # Whether to scale the data to be symmetric around 0
+    # max absolute value of data. If symmetric data will be [-max, max] else [0, max]
+    max_abs_value: 4. # Absolute value of acoustic-spectrograms
+    trim_fft_size: 512 # fft size used in trimming
+    trim_hop_size: 128 # hop size used in trimming
+    trim_top_db: 30 # top db used in trimming sensitive to each dataset
+    min_db: -115 # minimum db values which is used in acoustic' normalize
+    outputs_per_step: 2 # Number of frames at each decoding step
+    chunk_size: 20000 # chunk size for a single record file
+    prefetch_batch_num: 10 # Pre-fetch batch number
+
+Mel_settings:
+    acoustic_dim: 80  # Dimension of acousitc spectrograms
+    num_freq: 1025  # Only used when adding linear spectrograms post processing network
+    fft_size: 2048  # FFT size for fourier transforming
+    n_fft: 2048  # Extra window size is filled with 0 paddings to match this parameter
+    hop_size: 200 # hop_size between acoustic feature and waveforms
+    win_size: 800 # For 22050Hz 1100 ~:  50 ms (If None win_size :  n_fft)
+
+Input_embedding:
+    embedding_dim: 512  # Dimension of embedding space
+    phone_embedding_dim: 448 # Dimension of phone embedding space
+    tone_embedding_dim: 64 # Dimension of tone embedding space
+    seg_tag_embedding_dim: 32 # Dimension of word segment embedding space
+    prsd_embedding_dim: 32 # Dimension of prosody embedding space
+
+Attention_mechanism:
+    # GMM attention
+    attention_type: 'SMA'  # choice = ['GMM','LSA','DCA','SMA']
+    gmm_version: '2' # choice = ['0','1','2']
+    
+
+Training_settings:
+    is_cuda: True
+    pin_mem: True
+    n_workers: 8
+    batch_size: 32  # Number of training samples on each training steps or 32
+    valid_batch_size: 16   # randomly selected sampling from the training set for validation during training
+    initial_learning_rate: 2.e-3  # Starting learning rate
+    sch: True # Whether use scheduler to adjust the learning rate
+    sch_step: 4000 # iteration for warming up
+    final_learning_rate: 2.e-6  # Minimal learning rate
+    max_iter: 200000
+    weight_decay: 1.e-6
+    grad_clip_thresh: 1.0
+    mask_padding: True
+    p: 1 # mel spec loss penalty 
+
+
+    tacotron_teacher_forcing_mode: 'constant'
+    tacotron_teacher_forcing_ratio: 1. # Value from [0. 1.] 0.: 0%
+    # 1.: 100% determines the % of times we force next decoder inputs Only
+    # relevant if mode: 'constant'
+    tacotron_teacher_forcing_init_ratio: 1. # initial teacher forcing ratio.
+    # Relevant if mode: 'scheduled'
+    tacotron_teacher_forcing_final_ratio: 0. # final teacher forcing ratio.
+    # Relevant if mode: 'scheduled'
+    tacotron_teacher_forcing_start_decay: 10000 # starting point of teacher forcing ratio decay. Relevant if mode: 'scheduled'
+    tacotron_teacher_forcing_decay_steps: 280000 # Default: 280000 Determines
+    # the teacher forcing ratio decay slope. Relevant if mode: 'scheduled'
+    tacotron_teacher_forcing_decay_alpha: 0. # Teacher forcing ratio decay rate. Relevant if mode: 'scheduled'
+
+    save_training_summary_steps: 50
+    save_val_summary_steps: 1000  # Steps between running summary ops
+    save_smaple_steps: 5000
+    save_checkpoints_steps: 5000  # Steps between writing checkpoints
+    keep_checkpoint_max: 20  # Maximum keeped model
