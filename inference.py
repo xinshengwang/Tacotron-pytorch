@@ -72,7 +72,7 @@ if __name__ == '__main__':
 						help = 'text to synthesize')
 
 	args = parser.parse_args()
-	"""
+
 	cfg_from_file(args.cfg_file)
 	torch.backends.cudnn.enabled = True
 	torch.backends.cudnn.benchmark = False
@@ -84,11 +84,10 @@ if __name__ == '__main__':
 		audio(output, args.wav_pth)
 	if args.npy_pth != '':
 		save_mel(output, args.npy_pth)
-	"""
-	out = np.load('/home/work_nfs3/xswang/data/TTS/obama2/clip/test/tmp/mel/00191_007.npy')
-	save_path = '/home/work_nfs3/xswang/data/TTS/obama2/clip/test/tmp/gl_wav/00191_007.wav'
-	wav_postnet = inv_melspectrogram(out)
-	#save_wav(wav, pth+'.wav')
-	save_wav(wav_postnet, save_path)
+	# out = np.load('/home/work_nfs3/xswang/data/TTS/obama2/clip/test/tmp/mel/00191_007.npy')
+	# save_path = '/home/work_nfs3/xswang/data/TTS/obama2/clip/test/tmp/gl_wav/00191_007.wav'
+	# wav_postnet = inv_melspectrogram(out)
+	# #save_wav(wav, pth+'.wav')
+	# save_wav(wav_postnet, save_path)
 
 	

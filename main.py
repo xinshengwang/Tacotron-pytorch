@@ -47,18 +47,27 @@ def parse_args():
 	parser.add_argument('-cp', '--ckpt_pth', type = str, default = '',
 						help = 'path to load checkpoints')
 	parser.add_argument('-wp', '--wav_path', type = str, default = '',
-						help = 'path to load checkpoints')
+						help = 'path to save wav')
+	parser.add_argument('-mp','--mel_path',type=str,default='',
+						help='path to save mel')
 	parser.add_argument('--random_seed',type=int,default=1234)
-	parser.add_argument('--train',default=True) #
+	parser.add_argument('--train',action='store_true') #
 	args = parser.parse_args()
 	return args
 
 def make_dirs(args):
-	args.log_dir = os.path.join(args.save_root,'event')
-	args.train_info = os.path.join(args.save_root,'train_info.log')
-	args.ckpt_dir = os.path.join(args.save_root,'ckpt')
-	args.wav_path = os.path.join(args.save_root,'wavs')
-	for path in [args.log_dir,args.ckpt_dir,args.wav_path]:
+	if not args.log_dir:
+		args.log_dir = os.path.join(args.save_root,'event')
+	if not args.train_info:
+		args.train_info = os.path.join(args.save_root,'train_info.log')
+	if not args.ckpt_dir:
+		args.ckpt_dir = os.path.join(args.save_root,'ckpt')
+	if not args.wav_path:
+		args.wav_path = os.path.join(args.save_root,'wavs')
+	if not args.mel_path:
+		args.mel_path = os.path.join(args.save_root,'mels')
+	
+	for path in [args.log_dir,args.ckpt_dir,args.wav_path,args.mel_path]:
 		if not os.path.exists(path):
 			os.makedirs(path)
 		

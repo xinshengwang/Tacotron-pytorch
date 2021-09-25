@@ -280,7 +280,10 @@ class Tacotron2(nn.Module):
     def inference(self, inputs):
         if not cfg.groundtruth_alignment:
             # Only text inputs
-            inputs = inputs, None, None
+            if not len(inputs) == 3:
+                inputs = inputs, None, None
+            else:
+                inputs = inputs[0], None, None
         return self.forward(inputs)
 
 

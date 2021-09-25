@@ -65,10 +65,13 @@ def infer(args):
 		for i in range(len(y_pred)):
 			length = (y_pred[2][i]<0.5).sum()
 			predict_mel = y_pred[1][i][:length,:]
-			name = os.path.basename(filenames[i]).split('.')[0]
+			index = indexs[i]
+			name = os.path.basename(filenames[index]).split('.')[0]
 			save_path = os.path.join(args.wav_path,name + '.wav')
+			save_mel_path = os.path.join(args.mel_path,name +'.npy')
 			wav_postnet = inv_melspectrogram(to_arr(predict_mel))
 			#save_wav(wav, pth+'.wav')
+			np.save(save_mel_path,to_arr(predict_mel).T)
 			save_wav(wav_postnet, save_path)
 
 def infer_train(args,model):
@@ -85,7 +88,8 @@ def infer_train(args,model):
 		for i in range(len(y_pred)):
 			length = (y_pred[2][i]<0.5).sum()
 			predict_mel = y_pred[1][i][:length,:]
-			name = os.path.basename(filenames[i]).split('.')[0]
+			index = indexs[i]
+			name = os.path.basename(filenames[index]).split('.')[0]
 			save_path = os.path.join(args.wav_path,name + '.wav')
 			wav_postnet = inv_melspectrogram(to_arr(predict_mel))
 			#save_wav(wav, pth+'.wav')

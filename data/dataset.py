@@ -9,9 +9,10 @@ from torch.utils.data import Dataset
 import pdb
 
 def create_test_filenames(args):
-	txt_names =[name.split('.')[0] for name in glob(os.path.join(args.txt_dir,'*.txt'))]
-	mel_names = [name.split('.')[0] for name in glob(os.path.join(args.mel_dir,'*.npy'))]
+	txt_names =[os.path.split(name)[-1].split('.')[0] for name in glob(os.path.join(args.txt_dir,'*.npy'))]
+	mel_names = [os.path.split(name)[-1].split('.')[0] for name in glob(os.path.join(args.mel_dir,'*.npy'))]
 	names = list(set(txt_names) & set(mel_names))
+	names = txt_names
 	test_path = os.path.join(args.file_dir,'filenames_test.json')
 	with open(test_path,'w') as f:
 		json.dump(names,f)
@@ -40,15 +41,18 @@ class Basedataset(Dataset):
 				os.makedirs(args.file_dir,exist_ok=True)
 				create_train_val_filenames(args)
 			self.filenames = self.load_filenames(args,split)
-		
 		else:
-			self.filenames = create_test_filenames(args)
-	
+			if not os.path.exists(args.file_dir):
+				self.filenames = create_test_filenames(args)
+			else:
+				self.filenames = self.load_filenames(args,split)
 	def load_filenames(self,args,split):
 		if split == 'train':
 			path = os.path.join(args.file_dir,'filenames_train.json')
-		else:
+		elif split == 'val':
 			path = os.path.join(args.file_dir,'filenames_val.json')
+		else:
+			path = os.path.join(args.file_dir,'filenames_test.json')
 		with open(path,'r') as f:
 			names = json.load(f)
 		return names
@@ -119,7 +123,7 @@ class Tacocollate():
 			mel_padded[i, :, :mel.size(1)] = mel
 			gate_padded[i, mel.size(1)-1:] = 1
 			output_lengths[i] = mel.size(1)
-			indexs = batch[ids_sorted_decreasing[i]][-1]
+			indexs[i] = batch[ids_sorted_decreasing[i]][-1]
 		
 		if cfg.multi_speaker_training:
 			spks = torch.FloatTensor(len(batch),batch[0][-1].shape[0])
