@@ -31,7 +31,7 @@ This code is validated on a found data, which is extracted from Obama's talking 
     ``` 
 * Training
 
-    This code supports kinds of attention mechanisms  and reference embedding methods, you can define the specific model within a hyperparameter config file. In ```/bash```, there are already several set hyperparameter files.  You can follow the script ```bash/gst-train.sh``` to start the training.
+    This code supports kinds of attention mechanisms and reference embedding methods. You can define the specific model within a hyperparameter config file. In ```/bash```, there are already several set hyperparameter files.  You can follow the script ```bash/gst-train.sh``` to start the training.
     ```
     python main.py \
         --cfg_file= config/gst-tts.yaml \
@@ -41,7 +41,7 @@ This code is validated on a found data, which is extracted from Obama's talking 
         --save_root=/logdir \
         --train 
     ```
-    Note that "--file_dir" is a directory to save/load filenames for training and test. You don't have to manually create these files. If not filename file exits, this code will create them.  
+    Note that "--file_dir" is a directory to save/load filenames for training and test. You don't have to manually create these files. If not filename file exists, this code will create them.  
 
 ## Results
 
