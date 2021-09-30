@@ -60,7 +60,7 @@ Here are alignment results achieved by this code based on LSA attention mechanis
 * Griffin-Lim was supported
 
 ## References
-This project is highly based on the works below.
+This project is highly based on the work below.
 - [Tacotron by thuhcsi](https://github.com/thuhcsi/tacotron)
 - [Tacotron2 by BogiHsu](https://github.com/BogiHsu/Tacotron2-PyTorch)
 - [Attentions-in-Tacotron by LeoniusChen](https://github.com/LeoniusChen/Attentions-in-Tacotron)
