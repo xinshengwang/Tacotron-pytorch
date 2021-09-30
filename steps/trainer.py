@@ -84,9 +84,9 @@ def infer_train(args,model):
 	# ================ MAIN TRAINNIG LOOP! ===================
 	for batch in val_loader:
 		x, _, indexs = model.parse_data_batch(batch)
-		y_pred = model.inference(x[0])
+		y_pred = model.inference(x)
 		for i in range(len(y_pred)):
-			length = (y_pred[2][i]<0.5).sum()
+			length = max(10,(y_pred[2][i]<0.5).sum())
 			predict_mel = y_pred[1][i][:length,:]
 			index = indexs[i]
 			name = os.path.basename(filenames[index]).split('.')[0]
@@ -109,9 +109,9 @@ def train(args):
 	optimizer = torch.optim.Adam(model.parameters(), lr = cfg.initial_learning_rate,
 								betas = cfg.betas, eps = cfg.eps,
 								weight_decay = cfg.weight_decay)
-	criterion = Tacotron2Loss()
 	# load checkpoint
 	iteration = 1
+	criterion = Tacotron2Loss()
 	if args.ckpt_pth != '':
 		model, optimizer, iteration = load_checkpoint(args.ckpt_pth, model, optimizer)
 		iteration += 1 # next iteration is iteration+1
@@ -150,7 +150,7 @@ def train(args):
 			y_pred = model(x)
 
 			# loss
-			loss = criterion(y_pred, y)
+			loss = criterion(y_pred, y,iteration)
 			
 			# zero grad
 			model.zero_grad()

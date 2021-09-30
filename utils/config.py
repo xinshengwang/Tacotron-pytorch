@@ -7,6 +7,27 @@ cfg = __C
 
 
 
+# tacotron model
+__C.ref_type = ''
+__C.with_reference = False
+__C.gst_token_embed_dim = 256
+__C.vae_latent_dim = 10
+__C.gst_num_tokens = 10
+__C.gst_num_heads = 8
+__C.gst_num_convs = 5
+__C.gst_conv_channels = 512
+__C.gst_conv_kernel_size = 5
+__C.gst_conv_dropout = 0.5
+
+
+__C.vae_emb_dim = 256
+__C.vae_lat_dim = 256
+__C.kl_lambda = 0.00001
+__C.kl_step = 1000
+__C.kl_incr = 0.000001
+__C.kl_max_step = 300000
+__C.kl_step_after = 500
+ 
 # data setting
 __C.data_root = ''
 __C.file_dir = ''

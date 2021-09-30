@@ -10,3 +10,5 @@ python main.py \
     --file_dir=${base_root}/filenames \
     --save_root=logdir/${model_name}/logdir \
     --wav_path /home/work_nfs3/xswang/code/TTS/Tacotron-pytorch/logdir/obama_gmm/logdir/wav_gta \
+    --mel_path /home/work_nfs3/xswang/code/TTS/Tacotron-pytorch/logdir/obama_gmm/logdir/mel_gta \
+    --ckpt_pth /home/work_nfs3/xswang/code/TTS/Tacotron-pytorch/logdir/obama_gmm/logdir/ckpt/ckpt_200000 

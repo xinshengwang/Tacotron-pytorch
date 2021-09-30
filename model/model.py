@@ -231,33 +231,48 @@ class Tacotron2(nn.Module):
         # Encoder
         self.encoder = Encoder(embed_dim)
 
+        encoder_out_dim = cfg.encoder_embedding_dim
+        ref_encoder = self.get_ref_model()
+        if cfg.ref_type == 'GST':
+            encoder_out_dim += cfg.gst_token_embed_dim
+            self.gst = ref_encoder(mel_dim, num_tokens=cfg.gst_num_tokens,
+            token_embed_dim=cfg.gst_token_embed_dim, num_heads=cfg.gst_num_heads)
+        elif cfg.ref_type == 'VAE':
+            encoder_out_dim += cfg.vae_latent_dim
+            self.vae = ref_encoder(mel_dim)
         # Decoder
-        self.decoder = Decoder(mel_dim, r, cfg.encoder_embedding_dim,
+        self.decoder = Decoder(mel_dim, r, encoder_out_dim,
             max_decoder_steps=max_decoder_steps, stop_threshold=stop_threshold)
+        
 
         # Postnet
         self.postnet = Postnet(mel_dim)
-
+    def get_ref_model(self):
+        if cfg.ref_type == 'GST':
+            from model.gst import GST as ref_encoder
+        elif cfg.ref_type =='VAE':
+            from model.vae import VAE as ref_encoder
+        else:
+            return None
+        return ref_encoder
     def parse_data_batch(self, batch):
         """Parse data batch to form inputs and targets for model training/evaluating
         """
         # use same device as parameters
         device = next(self.parameters()).device
-        if cfg.multi_speaker_training: 
-            text, text_length, mel, stop, mel_length,spks, indexs = batch
-        else:
-            text, text_length, mel, stop, mel_length,indexs = batch
+        text, text_length, mel, stop, mel_length,indexs, rmel, spks = batch
         text = text.to(device).long()
         text_length = text_length.to(device).long()
         mel = mel.to(device).float()
+        rmel = rmel.to(device).float()
         if mel.shape[-1] != 80:
             mel = mel.transpose(2,1)
         stop = stop.to(device).float()
 
-        return (text, text_length, mel), (mel, stop), indexs
+        return (text, text_length, mel,rmel,mel_length), (mel, stop), indexs
 
     def forward(self, inputs):
-        inputs, input_lengths, mels = inputs
+        inputs, input_lengths, mels, rmel,mel_length = inputs
 
         B = inputs.size(0)
 
@@ -267,6 +282,16 @@ class Tacotron2(nn.Module):
         # (B, T, embed_dim)
         encoder_outputs = self.encoder(inputs)
 
+        if cfg.ref_type == 'GST':
+            style_embeddings = self.gst(mels,mel_length)
+        elif cfg.ref_type == 'VAE':
+            style_embeddings, (mu, log_var) = self.vae(mels,mel_length)
+
+        if cfg.ref_type != '': 
+            style_embeddings = style_embeddings.repeat(1, encoder_outputs.size(1), 1)
+            # (B, T, encoder_out_dim + token_embed_dim)
+            encoder_outputs = torch.cat((encoder_outputs, style_embeddings), dim=2)
+        
         # (B, T, mel_dim)
         mel_outputs, stop_tokens, alignments = self.decoder(
             encoder_outputs, mels, memory_lengths=input_lengths)
@@ -274,32 +299,56 @@ class Tacotron2(nn.Module):
         # Postnet processing
         mel_post = self.postnet(mel_outputs)
         mel_post = mel_outputs + mel_post
+        if cfg.ref_type == 'VAE':
+            return mel_outputs, mel_post, stop_tokens, alignments, mu, log_var
+        else:
+            return mel_outputs, mel_post, stop_tokens, alignments
 
-        return mel_outputs, mel_post, stop_tokens, alignments
-
-    def inference(self, inputs):
+    def inference(self, inputs, rmel=None):
         if not cfg.groundtruth_alignment:
             # Only text inputs
-            if not len(inputs) == 3:
-                inputs = inputs, None, None
+            if not len(inputs) == 5:
+                inputs = inputs, None, None, rmel, None
             else:
-                inputs = inputs[0], None, None
+                inputs = inputs[0], None, None, inputs[3], None
         return self.forward(inputs)
 
 
 class Tacotron2Loss(nn.Module):
     def __init__(self):
         super(Tacotron2Loss, self).__init__()
+        self.kl_lambda = cfg.kl_lambda
+    def KL_loss(self, mu, var):
+        return torch.mean(0.5 * torch.sum(torch.exp(var) + mu ** 2 - 1. - var, 1))
 
-    def forward(self, predicts, targets):
+    def update_lambda(self,iteration):
+        iteration += 1
+        if iteration % cfg.kl_step == 0:
+            self.kl_lambda = self.kl_lambda + cfg.kl_incr
+        if iteration <= cfg.kl_max_step and iteration % cfg.kl_step == 0:
+            kl_lambda = self.kl_lambda
+        elif iteration > cfg.kl_max_step and iteration % cfg.kl_step_after == 0:
+            kl_lambda = self.kl_lambda
+        else:
+            kl_lambda = 0.0
+        return min(1.0, kl_lambda)
+
+
+    def forward(self, predicts, targets, iteration):
         mel_target, stop_target = targets
         mel_target.requires_grad = False
         stop_target.requires_grad = False
-
-        mel_predict, mel_post_predict, stop_predict, _ = predicts
+        if cfg.ref_type == 'VAE':
+            mel_predict, mel_post_predict, stop_predict, _, mu, log_var = predicts
+        else:
+            mel_predict, mel_post_predict, stop_predict, _ = predicts
 
         mel_loss = nn.MSELoss()(mel_predict, mel_target)
         post_loss = nn.MSELoss()(mel_post_predict, mel_target)
         stop_loss = nn.BCELoss()(stop_predict, stop_target)
-
-        return mel_loss + post_loss + stop_loss
+        if cfg.ref_type == 'VAE':
+            kl_lambda = self.update_lambda(iteration)
+            kl_loss = self.KL_loss(mu,log_var)
+            return mel_loss + post_loss + stop_loss + kl_lambda * kl_loss
+        else:
+            return mel_loss + post_loss + stop_loss

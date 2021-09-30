@@ -30,7 +30,7 @@ def set_seed(seed):
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-cfg','--cfg_file',default='config/dca-tts.yaml',
+	parser.add_argument('-cfg','--cfg_file',default='config/gst-tts.yaml',
                         help='yaml files for configurations.')
 	parser.add_argument('-wd', '--txt_dir', type = str, default = r'F:\dataset\TTS_TEST\texts_seq',
 						help = 'directory to wav path')

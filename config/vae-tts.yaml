@@ -3,7 +3,7 @@ Multi_spk_setting:
     spk_embedding_dim: 256
 
 Tacotron_model:
-    ref_type: "" # choice[GST,VAE,GMVAE]
+    ref_type: "VAE" # choice[GST,VAE,GMVAE,None]
     with_reference: True
     gst_token_embed_dim: 256
     gst_num_tokens: 10
@@ -22,7 +22,6 @@ Tacotron_model:
     kl_step_after: 500
 
 Data_settings:
-    
     min_level_db: -115 # minimum level of dbs when set lower bound in amp_to_db
     ref_level_db: 20 # shift db before signal normalization
     fmin: 0 # To test depending on dataset
@@ -101,7 +100,7 @@ Training_settings:
 
     save_training_summary_steps: 50
     save_val_summary_steps: 1000  # Steps between running summary ops
-    save_smaple_steps: 5000 # 5000
+    save_smaple_steps: 5000 #5000
     save_checkpoints_steps: 5000  # Steps between writing checkpoints
     keep_checkpoint_max: 20  # Maximum keeped model
 

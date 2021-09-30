@@ -66,6 +66,15 @@ class Basedataset(Dataset):
 		if mel.shape[-1] == cfg.acoustic_dim:
 			mel = mel.T
 		return torch.IntTensor(txt),torch.Tensor(mel)
+	
+	def get_ref_mel(self):
+		mel_path = cfg.reference_path
+		mel = np.load(mel_path)
+		if mel.shape[-1] == cfg.acoustic_dim:
+			mel = mel.T
+		return torch.Tensor(mel)
+		
+		
 
 	def __len__(self):
 		return len(self.filenames)
@@ -73,14 +82,22 @@ class Basedataset(Dataset):
 class Tacodataset(Basedataset):
 	def __init__(self,args,split='train'):
 		Basedataset.__init__(self,args,split)
-	
 	def __getitem__(self, index):
 		txt,mel = self.get_text_mel_pair(index)
+		if cfg.with_reference:
+			if self.split == 'test' and os.path.exists(cfg.reference_path):
+				ref_mel = self.get_ref_mel()
+			else:
+				ref_mel = mel
+		else:
+			ref_mel = None
 		if cfg.multi_speaker_training:
 			spk = self.load_spk(self,index)
-			return txt,mel,spk,index
 		else:
-			return txt,mel,index
+			spk = None
+		
+		return txt,mel,index,ref_mel,spk
+		
 	def load_spk(self,index):
 		name = self.filenames[index]
 		path = os.path.join(self.data_root,'spks',name+'.npy')
@@ -116,6 +133,8 @@ class Tacocollate():
 		output_lengths.zero_()
 		indexs = torch.LongTensor(len(batch))
 		indexs.zero_()
+		rmel_padded = torch.FloatTensor(len(batch), num_mels, max_target_len)
+		rmel_padded.zero_()
 		for i in range(len(ids_sorted_decreasing)):
 			text = batch[ids_sorted_decreasing[i]][0]
 			text_padded[i, :text.shape[0]] = text
@@ -123,14 +142,15 @@ class Tacocollate():
 			mel_padded[i, :, :mel.size(1)] = mel
 			gate_padded[i, mel.size(1)-1:] = 1
 			output_lengths[i] = mel.size(1)
-			indexs[i] = batch[ids_sorted_decreasing[i]][-1]
-		
-		if cfg.multi_speaker_training:
-			spks = torch.FloatTensor(len(batch),batch[0][-1].shape[0])
-			for i in range(len(ids_sorted_decreasing)):
-				spk = batch[ids_sorted_decreasing[i]][-1]
-				spks[i] = spk
+			indexs[i] = batch[ids_sorted_decreasing[i]][2]
 
-			return text_padded, input_lengths, mel_padded, gate_padded, output_lengths, spks, indexs
-		else:
-			return text_padded, input_lengths, mel_padded, gate_padded, output_lengths,indexs
+			if cfg.with_reference:
+				rmel = batch[ids_sorted_decreasing[i]][3]
+				rmel_padded[i, :, :rmel.size(1)] = rmel
+			
+		spks = torch.FloatTensor(len(batch),1)
+		if cfg.multi_speaker_training:
+			for i in range(len(ids_sorted_decreasing)):
+				spk = batch[ids_sorted_decreasing[i]][4]
+				spks[i] = spk
+		return text_padded, input_lengths, mel_padded, gate_padded, output_lengths, indexs, rmel_padded, spks 
